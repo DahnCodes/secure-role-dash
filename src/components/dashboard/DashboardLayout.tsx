@@ -67,7 +67,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                       <Avatar className="h-10 w-10">
                         <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                          {getUserInitials(user.firstName, user.lastName)}
+                          {getUserInitials(user.first_name, user.last_name)}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
@@ -76,7 +76,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">
-                          {user.firstName} {user.lastName}
+                          {user.first_name} {user.last_name}
                         </p>
                         <p className="text-xs leading-none text-muted-foreground">
                           {user.email}

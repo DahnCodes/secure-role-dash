@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { AuthState, AuthContextType, LoginCredentials, RegisterCredentials, User } from '@/types/auth';
+import { supabase } from '@/integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -67,86 +69,69 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
   }
 }
 
-// Mock authentication functions (replace with real API calls)
-const mockUsers: User[] = [
-  {
-    id: '1',
-    email: 'admin@example.com',
-    firstName: 'Admin',
-    lastName: 'User',
-    role: 'admin',
-    status: 'active',
-    createdAt: new Date().toISOString(),
-    lastLogin: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    email: 'editor@example.com',
-    firstName: 'Editor',
-    lastName: 'User',
-    role: 'editor',
-    status: 'active',
-    createdAt: new Date().toISOString(),
-  },
-];
+const fetchUserProfile = async (userId: string): Promise<User | null> => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
 
-const mockLogin = async (credentials: LoginCredentials): Promise<User> => {
-  await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
-  
-  const user = mockUsers.find(u => u.email === credentials.email);
-  if (!user || credentials.password !== 'password123') {
-    throw new Error('Invalid email or password');
+  if (error || !data) {
+    console.error('Error fetching user profile:', error);
+    return null;
   }
-  
-  const updatedUser = { ...user, lastLogin: new Date().toISOString() };
-  localStorage.setItem('auth_user', JSON.stringify(updatedUser));
-  return updatedUser;
-};
 
-const mockRegister = async (credentials: RegisterCredentials): Promise<User> => {
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  if (mockUsers.some(u => u.email === credentials.email)) {
-    throw new Error('User with this email already exists');
-  }
-  
-  const newUser: User = {
-    id: Math.random().toString(36).substr(2, 9),
-    email: credentials.email,
-    firstName: credentials.firstName,
-    lastName: credentials.lastName,
-    role: 'viewer',
-    status: 'active',
-    createdAt: new Date().toISOString(),
-  };
-  
-  mockUsers.push(newUser);
-  localStorage.setItem('auth_user', JSON.stringify(newUser));
-  return newUser;
+  return data as User;
 };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Check for existing session on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem('auth_user');
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-        dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-      } catch {
-        localStorage.removeItem('auth_user');
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          // Fetch user profile when authenticated
+          setTimeout(async () => {
+            const profile = await fetchUserProfile(session.user.id);
+            if (profile) {
+              dispatch({ type: 'LOGIN_SUCCESS', payload: profile });
+            } else {
+              dispatch({ type: 'LOGIN_ERROR', payload: 'Failed to load user profile' });
+            }
+          }, 0);
+        } else {
+          dispatch({ type: 'LOGOUT' });
+        }
       }
-    }
-    dispatch({ type: 'SET_LOADING', payload: false });
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const profile = await fetchUserProfile(session.user.id);
+        if (profile) {
+          dispatch({ type: 'LOGIN_SUCCESS', payload: profile });
+        }
+      }
+      dispatch({ type: 'SET_LOADING', payload: false });
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (credentials: LoginCredentials) => {
     dispatch({ type: 'LOGIN_START' });
     try {
-      const user = await mockLogin(credentials);
-      dispatch({ type: 'LOGIN_SUCCESS', payload: user });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
+
+      if (error) {
+        throw error;
+      }
     } catch (error) {
       dispatch({ type: 'LOGIN_ERROR', payload: error instanceof Error ? error.message : 'Login failed' });
     }
@@ -155,15 +140,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = async (credentials: RegisterCredentials) => {
     dispatch({ type: 'REGISTER_START' });
     try {
-      const user = await mockRegister(credentials);
-      dispatch({ type: 'REGISTER_SUCCESS', payload: user });
+      const { error } = await supabase.auth.signUp({
+        email: credentials.email,
+        password: credentials.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            first_name: credentials.firstName,
+            last_name: credentials.lastName,
+          }
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
     } catch (error) {
       dispatch({ type: 'REGISTER_ERROR', payload: error instanceof Error ? error.message : 'Registration failed' });
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('auth_user');
+  const logout = async () => {
+    await supabase.auth.signOut();
     dispatch({ type: 'LOGOUT' });
   };
 

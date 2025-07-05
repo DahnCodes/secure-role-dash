@@ -1,13 +1,14 @@
 export interface User {
   id: string;
+  user_id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   role: UserRole;
   status: UserStatus;
-  createdAt: string;
-  lastLogin?: string;
-  avatar?: string;
+  avatar_url?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export type UserRole = 'admin' | 'editor' | 'viewer';

@@ -34,8 +34,8 @@ export default function Dashboard() {
       color: 'text-primary'
     },
     {
-      title: 'Last Login',
-      value: user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'First time',
+      title: 'Last Updated',
+      value: new Date(user.updated_at).toLocaleDateString(),
       icon: User,
       color: 'text-muted-foreground'
     }
@@ -47,7 +47,7 @@ export default function Dashboard() {
         {/* Welcome Section */}
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Welcome back, {user.firstName}!
+            Welcome back, {user.first_name}!
           </h1>
           <p className="text-muted-foreground">
             You're logged in as {user.role} with {userPermissions.length} permissions

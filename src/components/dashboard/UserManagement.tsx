@@ -20,46 +20,52 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Shield, User as UserIcon, ShieldCheck, ShieldOff, X } from 'lucide-react';
 
-// Mock users data
+// Mock users for admin demo (replace with real Supabase data)
 const mockUsers: User[] = [
   {
     id: '1',
+    user_id: '1',
     email: 'admin@example.com',
-    firstName: 'Admin',
-    lastName: 'User',
+    first_name: 'Admin',
+    last_name: 'User',
     role: 'admin',
     status: 'active',
-    createdAt: '2024-01-15T10:00:00Z',
-    lastLogin: '2024-01-20T14:30:00Z',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '2',
+    user_id: '2', 
     email: 'editor@example.com',
-    firstName: 'Editor',
-    lastName: 'Smith',
+    first_name: 'Editor',
+    last_name: 'User',
     role: 'editor',
     status: 'active',
-    createdAt: '2024-01-16T11:00:00Z',
-    lastLogin: '2024-01-19T09:15:00Z',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '3',
-    email: 'viewer@example.com',
-    firstName: 'John',
-    lastName: 'Viewer',
+    user_id: '3',
+    email: 'viewer@example.com', 
+    first_name: 'Viewer',
+    last_name: 'User',
     role: 'viewer',
     status: 'active',
-    createdAt: '2024-01-17T12:00:00Z',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '4',
-    email: 'pending@example.com',
-    firstName: 'Pending',
-    lastName: 'User',
+    user_id: '4',
+    email: 'inactive@example.com',
+    first_name: 'Inactive',
+    last_name: 'User', 
     role: 'viewer',
-    status: 'pending',
-    createdAt: '2024-01-18T13:00:00Z',
-  },
+    status: 'inactive',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
 ];
 
 export function UserManagement() {
@@ -146,7 +152,7 @@ export function UserManagement() {
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
-                <TableHead>Last Login</TableHead>
+                <TableHead>Last Updated</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -157,12 +163,12 @@ export function UserManagement() {
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs">
-                          {getUserInitials(user.firstName, user.lastName)}
+                          {getUserInitials(user.first_name, user.last_name)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="font-medium">
-                          {user.firstName} {user.lastName}
+                          {user.first_name} {user.last_name}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {user.email}
@@ -219,10 +225,10 @@ export function UserManagement() {
                     </DropdownMenu>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {formatDate(user.createdAt)}
+                    {formatDate(user.created_at)}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {user.lastLogin ? formatDate(user.lastLogin) : 'Never'}
+                    {formatDate(user.updated_at)}
                   </TableCell>
                   <TableCell>
                     <Button
